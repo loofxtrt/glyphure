@@ -213,7 +213,10 @@ export default class FileGlyphs extends Plugin {
 			} else if (startsWithVariations(folderName, 'seed')) {
 				glyphId = 'sprout';
 				newClass = 'highlighted-entry';
-			}
+			} else if (startsWithVariations(folderName, 'nucleo')) {
+				glyphId = 'orbit';
+				newClass = 'highlighted-entry';
+			} 
 			//else if (startsWithVariations(folderName, 'recursos')) {
 				//svgContents = svgToolbox;
 			//}
