@@ -214,7 +214,7 @@ class GlyphureSettingsTab extends PluginSettingTab {
 		const { containerEl } = this; // referência pro container principal da tab
 		containerEl.empty(); // limpar os elementos antes de recarregar
 		
-		this.plugin.settings.rules.forEach(rule => {
+		this.plugin.settings.rules.forEach((rule, index) => {
 			// seção visual individual da regra
 			const section = containerEl.createDiv('glyphure-rule');
 			
@@ -289,9 +289,23 @@ class GlyphureSettingsTab extends PluginSettingTab {
 							await this.plugin.saveSettings();
 						});
 				});
+			
+			new Setting(section)
+				.setName('Remove rule')
+				.setDesc('Removes this rule')
+				.addButton(button => {
+					button
+						.setButtonText('Remove rule')
+						.setWarning()
+						.onClick(async () => {
+							this.plugin.settings.rules.splice(index, 1);
+							
+							await this.plugin.saveSettings();
+							this.display();
+						})
+				});
 		});
 
-		// TODO: botão de deletar regras
 		new Setting(containerEl)
 			.addButton(button => {
 				button
