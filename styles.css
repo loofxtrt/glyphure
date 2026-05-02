@@ -8,11 +8,15 @@
 .glyphure-icon {
 	--icon-size: 14px;
 
-	margin-right: 6px !important;
+	margin-right: 6px !important; /* distância do ícone pro texto */
 
 	display: flex;
 	align-items: center;
 	justify-content: center;
+}
+
+.highlighted {
+	color: var(--color-accent);
 }
 
 .glyphure-rule {

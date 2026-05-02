@@ -443,10 +443,12 @@ export default class Glyphure extends Plugin {
 			// por padrão, usa um ícone x
 			// e se alguma regra corresponder, troca o ícone padrão
 			let iconId = 'folder';
+			let isHighlighted;
 			
 			for (const rule of this.settings.rules) {
 				if (rule.match == dirName) {
 					iconId = rule.icon;
+					isHighlighted = rule.highlight;
 				} else {
 					continue;
 				}
@@ -460,6 +462,10 @@ export default class Glyphure extends Plugin {
 			// criar a div do ícone e adicionar a classe html
 			const iconDiv = document.createElement('div');
 			iconDiv.classList.add('glyphure-icon');
+			
+			if (isHighlighted) {
+				iconDiv.classList.add('highlighted');
+			}
 			
 			setIcon(iconDiv, iconId);
 
@@ -504,9 +510,21 @@ class GlyphureSettingsTab extends PluginSettingTab {
 
 					// TODO
 					text.onChange(async value => {
-						rule.icon =  value;
+						rule.icon = value;
 						await this.plugin.saveSettings();
 					});
+				});
+			
+			new Setting(section)
+				.setName('Highlighted')
+				.addToggle((toggle) => {
+					toggle
+						.setValue(rule.highlight ?? false)
+
+						.onChange(async value => {
+							rule.highlight = value;
+							await this.plugin.saveSettings();
+						});
 				});
 		});
 
