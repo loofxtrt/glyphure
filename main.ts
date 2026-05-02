@@ -380,14 +380,19 @@ export default class Glyphure extends Plugin {
 
 		await this.loadSettings();
 		
+		// adiciona a seção de settings do plugin
 		this.addSettingTab(
 			new GlyphureSettingsTab(this.app, this)
 		);
 
-		// await this.injectIcons();
 		this.app.workspace.onLayoutReady(() => {
+			// espera o layout estar pronto
+			// antes de injetar os ícones pela primeira vez
 			this.injectIcons();
-
+			
+			// TODO: documentação
+			// adiciona um observer na file tree,
+			// pra que qualquer mudança nela faça os ícones se atualizarem
 			const fileTreeContainer = document.querySelector('.nav-files-container') as HTMLElement | null;
 			if (fileTreeContainer) {
 				const observer = new MutationObserver(() => {
@@ -417,8 +422,7 @@ export default class Glyphure extends Plugin {
 	}
 
 	async injectIcons() {
-		const glyphureClass = 'glyphure-icon';
-
+		// TODO: fazer rodar ao save e load settings também
 		// TODO: documentação
 		const directories = Array.from(
 			document.querySelectorAll('.nav-folder-title')
@@ -428,34 +432,38 @@ export default class Glyphure extends Plugin {
 			// obter o nome do diretório (sem espaços ou uma string vazia)
 			const dirName = d.textContent?.trim() || '';
 
-			console.log(`Verifying directory ${dirName}`);
+			// console.log(`Verifying directory ${dirName}`);
 			
-			const iconAlreadyAdded = d.querySelector(`.${glyphureClass}`);
+			// não faz nada se o elemento já tiver um ícone
+			const iconAlreadyAdded = d.querySelector(`.glyphure-icon`);
 			if (iconAlreadyAdded) {
 				continue;
 			}
 
+			// por padrão, usa um ícone x
+			// e se alguma regra corresponder, troca o ícone padrão
+			let iconId = 'folder';
+			
 			for (const rule of this.settings.rules) {
-				if (!(rule.match == dirName)) {
+				if (rule.match == dirName) {
+					iconId = rule.icon;
+				} else {
 					continue;
 				}
-				
-				let iconId = rule.icon;
-
-				// garantir que o id seja válido pra api do obsidian/lucide
-				if (!iconId.startsWith('lucide-')) {
-					iconId = 'lucide-' + iconId;
-				}
-				
-				// criar a div do ícone e adicionar a classe html
-				const iconDiv = document.createElement('div');
-				iconDiv.classList.add(glyphureClass);
-				
-				setIcon(iconDiv, iconId);
-
-				// adicionar o ícone no começo do elemento da file tree
-				d.prepend(iconDiv);
 			}
+
+			// garantir que o id seja válido pra api do obsidian/lucide
+			if (!iconId.startsWith('lucide-')) {
+				iconId = 'lucide-' + iconId;
+			}
+			
+			// criar a div do ícone e adicionar a classe html
+			const iconDiv = document.createElement('div');
+			iconDiv.classList.add('glyphure-icon');
+			
+			setIcon(iconDiv, iconId);
+
+			d.prepend(iconDiv); // adiciona no começo/antes do elemento da file tree
 		}
 	}
 }
@@ -463,6 +471,7 @@ export default class Glyphure extends Plugin {
 class GlyphureSettingsTab extends PluginSettingTab {
 	plugin: Glyphure;
 	
+	// TODO: documentação
 	constructor(app: App, plugin: Glyphure) {
 		super(app, plugin)
 		this.plugin = plugin
@@ -474,8 +483,8 @@ class GlyphureSettingsTab extends PluginSettingTab {
 		containerEl.empty(); // limpar os elementos antes de recarregar
 		
 		this.plugin.settings.rules.forEach(rule => {
-			const section = containerEl.createDiv('rule-section');
-
+			const section = containerEl.createDiv('glyphure-rule');
+			
 			new Setting(section)
 				.setName('Match')
 				.addText(text => {

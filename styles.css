@@ -1,69 +1,28 @@
-:root {
-	--glyph-size: 14px;
+.nav-folder-title,
+.nav-file-title {
+	/* sem isso, o texto fica mais baixo que o ícone */
+	display: flex;
+	align-items: center;
 }
 
-.nav-folder-title .glyph svg, .nav-file-title .glyph svg {
-	width: var(--glyph-size) !important;
-	height: var(--glyph-size) !important;
-	min-width: var(--glyph-size) !important;
-	min-height: var(--glyph-size) !important;
-	max-width: var(--glyph-size) !important;
-	max-height: var(--glyph-size) !important;
+.glyphure-icon {
+	--icon-size: 14px;
 
-	/* centralização vertical */
-	text-align: center;
-	vertical-align: middle;
+	margin-right: 6px !important;
 
-    /* distância entre o ícone e o texto do nome do arquivo/pasta */
-    margin-right: 6px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
-/* fundo que é a cor do accent, mas com 95%~ de transparência */
-/*
-.highlighted-entry {
-	background-color: color-mix(in srgb, var(--color-accent) 5%, transparent) !important;
-}
-*/
-
-.highlighted-entry .glyph svg {
-	/* isso colore só o ícone, não o texto do item inteiro na file tree */
-	color: var(--color-accent) !important;
+.glyphure-rule {
+	background-color: var(--setting-items-background) !important;
+	border-radius: var(--setting-items-radius) !important;
+	margin-bottom: var(--size-4-2); /* o mesmo que o obsidian usa em setting-item */
 }
 
-.highlighted-entry:hover .glyph svg {
-	/* faz o highlight não sobreescrever a cor de hover no item da file tree */
-    color: var(--color-hover-accent) !important;
+.glyphure-rule > .setting-item {
+	background-color: transparent !important;
+	margin-top: 0;
+	margin-bottom: 0;
 }
-
-/*.faint-entry .glyph svg, .faint-entry {
-	/*font-style: italic;*/
-
-	/*
-		funciona
-		color: var(--nav-collapse-icon-color) !important;
-	*/
-
-	/*
-		por algum motivo não funciona
-		muted seria o mais apropiado, mas só o faint funciona
-		color: var(--text-muted) !important;
-	*/
-
-	/*
-		escurecer mais ainda a cor pra ter uma diferença clara
-		comentado até a parte do hover ser consertada
-		color: color-mix(in srgb, var(--text-faint) 80%, black 20%);
-	*/
-/*}
-
-/*
-.faint-entry:hover * {
-	color: red;
-}
-*/
-
-/*
-.faint-entry:hover .glyph:hover svg:hover, .faint-entry:hover {
-	color: red;
-}
-*/
