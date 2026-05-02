@@ -31,8 +31,9 @@ const svgWaves = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
 
 interface Rule {
 	iconType: 'lucide' | 'svg';
-	icon: string;
+	id: string;
 	match: string;
+	svg?: string;
 	highlight?: boolean;
 }
 
@@ -44,10 +45,16 @@ const DEFAULT_SETTINGS: GlyphureSettings = {
 	rules: [
 		{
 			iconType: 'lucide',
-			icon: 'link-2',
+			id: 'link-2',
 			match: '_anexos'
 		}
 	]
+}
+
+const DEFAULT_RULE: Rule = {
+	iconType: 'lucide',
+	id: 'folder',
+	match: ''
 }
 
 function injectIcon(element: Element, iconId: string, newHtmlClass: string = '') {
@@ -440,34 +447,52 @@ export default class Glyphure extends Plugin {
 				continue;
 			}
 
+			// TODO: id tá obrigatório. fazer com que se ele não tiver definido,
+			// que seja inferido no momento de loading como 'folder' como padrão
+			
 			// por padrão, usa um ícone x
 			// e se alguma regra corresponder, troca o ícone padrão
-			let iconId = 'folder';
-			let isHighlighted;
+			let rule = DEFAULT_RULE;
 			
-			for (const rule of this.settings.rules) {
-				if (rule.match == dirName) {
-					iconId = rule.icon;
-					isHighlighted = rule.highlight;
-				} else {
-					continue;
+			for (const r of this.settings.rules) {
+				if (r.match == dirName) {
+					rule = r;
+					break;
 				}
 			}
 
 			// garantir que o id seja válido pra api do obsidian/lucide
+			let iconId = rule.id;
+
 			if (!iconId.startsWith('lucide-')) {
 				iconId = 'lucide-' + iconId;
 			}
 			
-			// criar a div do ícone e adicionar a classe html
+			// criar a div do ícone e adicionar as classes html
 			const iconDiv = document.createElement('div');
 			iconDiv.classList.add('glyphure-icon');
-			
-			if (isHighlighted) {
-				iconDiv.classList.add('highlighted');
+
+			// aplicar classes htmls necessárias
+			if (rule.highlight) {
+				iconDiv.classList.add('glyphure-highlighted');
 			}
 			
-			setIcon(iconDiv, iconId);
+			// aplicar o ícone de modo diferente dependendo do tipo dele
+			if (rule.iconType == 'lucide') {
+				setIcon(iconDiv, iconId);	
+			} else if (rule.iconType == 'svg' ) {
+				let svg = rule.svg;
+				
+				if (svg) {
+					// isso espera que o conteúdo do svg seja igual o de uma tag html
+					iconDiv.innerHTML = svg;
+				} else {
+					// fallback pra indicar que o tipo é svg
+					// mas nenhum svg foi passado
+					setIcon(iconDiv, 'x');
+					iconDiv.classList.add('glyphure-error');
+				}
+			}
 
 			d.prepend(iconDiv); // adiciona no começo/antes do elemento da file tree
 		}
@@ -492,9 +517,24 @@ class GlyphureSettingsTab extends PluginSettingTab {
 			const section = containerEl.createDiv('glyphure-rule');
 			
 			new Setting(section)
+			.addDropdown(dropdown => {
+				dropdown
+					.addOption('lucide', 'Lucide')
+					.addOption('svg', 'Custom SVG')
+					
+					.setValue(rule.iconType)
+					
+					.onChange(async value => {
+						rule.iconType = value as 'lucide' | 'svg';
+						
+						await this.plugin.saveSettings();
+					})
+			})
+
+			new Setting(section)
 				.setName('Match')
 				.addText(text => {
-					text.setValue(rule.match);
+					text.setValue(rule.match); // carregar o valor que já existe nos dados
 
 					// TODO
 					text.onChange(async value => {
@@ -504,17 +544,28 @@ class GlyphureSettingsTab extends PluginSettingTab {
 				});
 			
 			new Setting(section)
-				.setName('Icon')
+				.setName('ID')
 				.addText(text => {
-					text.setValue(rule.icon)
+					text.setValue(rule.id)
 
 					// TODO
 					text.onChange(async value => {
-						rule.icon = value;
+						rule.id = value;
 						await this.plugin.saveSettings();
 					});
 				});
-			
+		
+			new Setting(section)
+			.setName('SVG')
+			.addTextArea(text => {
+				text.setValue(rule.svg ?? '')
+
+				text.onChange(async value => {
+					rule.svg = value;
+					await this.plugin.saveSettings();
+				});
+			});
+		
 			new Setting(section)
 				.setName('Highlighted')
 				.addToggle((toggle) => {
@@ -537,7 +588,7 @@ class GlyphureSettingsTab extends PluginSettingTab {
 						this.plugin.settings.rules.push({
 							match: '',
 							iconType: 'lucide',
-							icon: ''
+							id: ''
 						});
 						
 						await this.plugin.saveSettings(); // salvar no disco

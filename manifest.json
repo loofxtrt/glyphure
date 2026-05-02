@@ -1,6 +1,6 @@
 {
-	"id": "file-glyphs",
-	"name": "File Glyphs",
+	"id": "glyphure",
+	"name": "Glyphure",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
 	"description": "Icons for the Obsidian file tree with static rules and conventions",

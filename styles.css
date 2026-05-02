@@ -15,8 +15,18 @@
 	justify-content: center;
 }
 
-.highlighted {
+.glyphure-icon svg {
+	/* precisa disso pro tamanho também afetar svg custom */
+	width: var(--icon-size);
+	height: var(--icon-size);
+}
+
+.glyphure-highlighted {
 	color: var(--color-accent);
+}
+
+.glyphure-error {
+	color: var(--color-red) !important;
 }
 
 .glyphure-rule {
