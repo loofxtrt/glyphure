@@ -1,4 +1,8 @@
-import { parseFrontMatterTags, Plugin, setIcon, TFile } from 'obsidian';
+import {
+	parseFrontMatterTags,
+	Plugin, PluginSettingTab,
+	setIcon, Setting, App, TFile,
+} from 'obsidian';
 
 // IMPORTANTE:
 // TODOS OS SVGS DEVEM TER A COR DE PREENCHIMENTO currentColor PRA QUE AS CORES DELES SEJAM COERENTES COM OUTROS ÍCONES
@@ -24,6 +28,27 @@ const svgStone = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
 const svgToolbox = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-toolbox-icon lucide-toolbox"><path d="M16 12v4"/><path d="M16 6a2 2 0 0 1 1.414.586l4 4A2 2 0 0 1 22 12v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 .586-1.414l4-4A2 2 0 0 1 8 6z"/><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 14h20"/><path d="M8 12v4"/></svg>`;
 const svgWavesLadder = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-waves-ladder-icon lucide-waves-ladder"><path d="M19 5a2 2 0 0 0-2 2v11"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M7 13h10"/><path d="M7 9h10"/><path d="M9 5a2 2 0 0 0-2 2v11"/></svg>`;
 const svgWaves = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-waves-icon lucide-waves"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg>`;
+
+interface Rule {
+	iconType: 'lucide' | 'svg';
+	icon: string;
+	match: string;
+	highlight?: boolean;
+}
+
+interface GlyphureSettings {
+	rules: Rule[];
+}
+
+const DEFAULT_SETTINGS: GlyphureSettings = {
+	rules: [
+		{
+			iconType: 'lucide',
+			icon: 'link-2',
+			match: '_anexos'
+		}
+	]
+}
 
 function injectIcon(element: Element, iconId: string, newHtmlClass: string = '') {
 	// garantir que o id seja válido pra api do obsidian/lucide
@@ -83,7 +108,7 @@ function startsWithVariations(target: string, lookFor: string): boolean {
 	}
 }
 
-export default class FileGlyphs extends Plugin {
+export class GlyphureOLD extends Plugin {
 	onload() {
 		// injetar os ícones no carregamento inicial
 		this.runIconVerification();
@@ -344,5 +369,153 @@ export default class FileGlyphs extends Plugin {
 		
 		this.verifyFileIcons(files);
 		this.verifyDirectoryIcons(directories);
+	}
+}
+
+export default class Glyphure extends Plugin {
+	settings: GlyphureSettings;
+
+	async onload() {
+		console.log('Loading Glyphure');
+
+		await this.loadSettings();
+		
+		this.addSettingTab(
+			new GlyphureSettingsTab(this.app, this)
+		);
+
+		// await this.injectIcons();
+		this.app.workspace.onLayoutReady(() => {
+			this.injectIcons();
+
+			const fileTreeContainer = document.querySelector('.nav-files-container') as HTMLElement | null;
+			if (fileTreeContainer) {
+				const observer = new MutationObserver(() => {
+					this.injectIcons();
+				})
+				
+				observer.observe(fileTreeContainer, {
+					childList: true,
+					subtree: true
+				});
+			}
+		});
+	}
+	
+	async loadSettings() {
+		// TODO: documentação
+		this.settings = Object.assign(
+			{},
+			DEFAULT_SETTINGS,
+			await this.loadData()
+		);
+	}
+
+	async saveSettings() {
+		// não precisa serializar pq a api do obsidian já faz isso
+		await this.saveData(this.settings);
+	}
+
+	async injectIcons() {
+		const glyphureClass = 'glyphure-icon';
+
+		// TODO: documentação
+		const directories = Array.from(
+			document.querySelectorAll('.nav-folder-title')
+		);
+
+		for (const d of directories) {
+			// obter o nome do diretório (sem espaços ou uma string vazia)
+			const dirName = d.textContent?.trim() || '';
+
+			console.log(`Verifying directory ${dirName}`);
+			
+			const iconAlreadyAdded = d.querySelector(`.${glyphureClass}`);
+			if (iconAlreadyAdded) {
+				continue;
+			}
+
+			for (const rule of this.settings.rules) {
+				if (!(rule.match == dirName)) {
+					continue;
+				}
+				
+				let iconId = rule.icon;
+
+				// garantir que o id seja válido pra api do obsidian/lucide
+				if (!iconId.startsWith('lucide-')) {
+					iconId = 'lucide-' + iconId;
+				}
+				
+				// criar a div do ícone e adicionar a classe html
+				const iconDiv = document.createElement('div');
+				iconDiv.classList.add(glyphureClass);
+				
+				setIcon(iconDiv, iconId);
+
+				// adicionar o ícone no começo do elemento da file tree
+				d.prepend(iconDiv);
+			}
+		}
+	}
+}
+
+class GlyphureSettingsTab extends PluginSettingTab {
+	plugin: Glyphure;
+	
+	constructor(app: App, plugin: Glyphure) {
+		super(app, plugin)
+		this.plugin = plugin
+	}
+
+	display(): void {
+		const { containerEl } = this;
+	
+		containerEl.empty(); // limpar os elementos antes de recarregar
+		
+		this.plugin.settings.rules.forEach(rule => {
+			const section = containerEl.createDiv('rule-section');
+
+			new Setting(section)
+				.setName('Match')
+				.addText(text => {
+					text.setValue(rule.match);
+
+					// TODO
+					text.onChange(async value => {
+						rule.match =  value;
+						await this.plugin.saveSettings();
+					});
+				});
+			
+			new Setting(section)
+				.setName('Icon')
+				.addText(text => {
+					text.setValue(rule.icon)
+
+					// TODO
+					text.onChange(async value => {
+						rule.icon =  value;
+						await this.plugin.saveSettings();
+					});
+				});
+		});
+
+		new Setting(containerEl)
+			.addButton(button => {
+				button
+					.setButtonText('New rule')
+					.setCta()
+					.onClick(async () => {
+						this.plugin.settings.rules.push({
+							match: '',
+							iconType: 'lucide',
+							icon: ''
+						});
+						
+						await this.plugin.saveSettings(); // salvar no disco
+						this.display(); // atualizar a tab pra mostrar a regra nova
+					});
+			})
 	}
 }
