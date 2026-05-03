@@ -39,6 +39,42 @@ const DEFAULT_RULE: Rule = {
 	enabled: true
 }
 
+function applyIconToElement(el: HTMLElement, rule: Rule): HTMLElement {
+	/**
+	 * aplica um ícone à um elemento de formas diferentes
+	 * dependendo do tipo dele
+	 * 
+	 * args:
+	 * 		el:
+	 * 			elemento a receber o ícone
+	 * 			no caso da file tree, geralmente seria uma div
+	 * 		
+	 * 		rule:
+	 * 			regra que contém as informações necessárias
+	 * 			pra fazer a aplicação do ícone
+	 */
+	
+	if (rule.iconType == 'lucide') {
+		// se for um ícone normal do lucide,
+		// dá pra só usar o setIcon nativo do obsidian
+		setIcon(el, rule.id);	
+	} else if (rule.iconType == 'svg' ) {
+		let svg = rule.svg;
+		
+		if (svg) {
+			// isso espera que o conteúdo do svg seja igual o de uma tag html
+			el.innerHTML = svg;
+		} else {
+			// fallback pra indicar que o tipo é svg
+			// mas nenhum svg foi passado
+			setIcon(el, 'x');
+			el.classList.add('glyphure-error');
+		}
+	}
+
+	return el;
+}
+
 export default class Glyphure extends Plugin {
 	settings: GlyphureSettings;
 
@@ -168,24 +204,10 @@ export default class Glyphure extends Plugin {
 				iconDiv.classList.add('glyphure-highlighted');
 			}
 			
-			// aplicar o ícone de modo diferente dependendo do tipo dele
-			if (rule.iconType == 'lucide') {
-				setIcon(iconDiv, iconId);	
-			} else if (rule.iconType == 'svg' ) {
-				let svg = rule.svg;
-				
-				if (svg) {
-					// isso espera que o conteúdo do svg seja igual o de uma tag html
-					iconDiv.innerHTML = svg;
-				} else {
-					// fallback pra indicar que o tipo é svg
-					// mas nenhum svg foi passado
-					setIcon(iconDiv, 'x');
-					iconDiv.classList.add('glyphure-error');
-				}
-			}
-
-			d.prepend(iconDiv); // adiciona no começo/antes do elemento da file tree
+			// resolver a aplicação do ícone
+			// e adicionar o resulto no começo/antes do elemento da file tree
+			applyIconToElement(iconDiv, rule);
+			d.prepend(iconDiv);
 		}
 	}
 }
@@ -224,6 +246,9 @@ class GlyphureSettingsTab extends PluginSettingTab {
 		this.plugin.settings.rules.forEach((rule, index) => {
 			// seção visual individual da regra
 			const section = containerEl.createDiv('glyphure-rule');
+
+			const preview = section.createDiv('glyphure-preview');
+			preview.createEl
 			
 			// seletor do tipo de ícone
 			new Setting(section)
