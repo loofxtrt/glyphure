@@ -10,6 +10,7 @@ interface Rule {
 	iconType: 'lucide' | 'svg';
 	id: string;
 	match: string;
+	enabled: boolean;
 	svg?: string;
 	highlight?: boolean;
 }
@@ -18,20 +19,24 @@ interface GlyphureSettings {
 	rules: Rule[];
 }
 
+// conjunto de rules padrão
 const DEFAULT_SETTINGS: GlyphureSettings = {
 	rules: [
 		{
 			iconType: 'lucide',
 			id: 'link-2',
-			match: '_anexos'
+			match: '_anexos',
+			enabled: true
 		}
 	]
 }
 
+// rule individual padrão
 const DEFAULT_RULE: Rule = {
 	iconType: 'lucide',
 	id: 'folder',
-	match: ''
+	match: '',
+	enabled: true
 }
 
 export default class Glyphure extends Plugin {
@@ -126,13 +131,15 @@ export default class Glyphure extends Plugin {
 				continue;
 			}
 			
-			// por padrão, usa um ícone x
-			// e se alguma regra corresponder, troca o ícone padrão
+			// por padrão, usa uma regra genérica
+			// e se alguma regra corresponder E ESTIVER ATIVA, troca ela
 			let rule = DEFAULT_RULE;
 			
 			for (const r of this.settings.rules) {
 				if (r.match == dirName) {
-					rule = r;
+					if (r.enabled) {
+						rule = r;
+					}
 					break;
 				}
 			}
@@ -230,6 +237,7 @@ class GlyphureSettingsTab extends PluginSettingTab {
 					// carregar o valor atual salvo
 					.setValue(rule.iconType)
 					
+					// escutar quando esse valor mudar
 					.onChange(async value => {
 						rule.iconType = value as 'lucide' | 'svg'; // atualizar o valor da regra
 						
@@ -289,6 +297,19 @@ class GlyphureSettingsTab extends PluginSettingTab {
 							await this.plugin.saveSettings();
 						});
 				});
+
+			new Setting(section)
+				.setName('Toggle rule')
+				.setDesc('Enable or disable this rule')
+				.addToggle(toggle => {
+					toggle
+						.setValue(rule.enabled ?? true)
+						
+						.onChange(async value => {
+							rule.enabled = value;
+							await this.plugin.saveSettings();
+						});
+				});
 			
 			new Setting(section)
 				.setName('Remove rule')
@@ -316,7 +337,8 @@ class GlyphureSettingsTab extends PluginSettingTab {
 						this.plugin.settings.rules.push({
 							match: '',
 							iconType: 'lucide',
-							id: ''
+							id: '',
+							enabled: true
 						});
 						
 						await this.plugin.saveSettings(); // salvar no disco
