@@ -44,16 +44,15 @@ function applyIconToElement(el: HTMLElement, rule: Rule): HTMLElement {
 	 * aplica um ícone à um elemento de formas diferentes
 	 * dependendo do tipo dele
 	 * 
-	 * args:
-	 * 		el:
-	 * 			elemento a receber o ícone
-	 * 			no caso da file tree, geralmente seria uma div
+	 * @param el: elemento a receber o ícone
+	 * 			  no caso da file tree, geralmente seria uma div
 	 * 		
-	 * 		rule:
-	 * 			regra que contém as informações necessárias
-	 * 			pra fazer a aplicação do ícone
+	 * @param rule: regra que contém as informações necessárias
+	 *  			pra fazer a aplicação do ícone
+	 * 
+	 * @returns: elemento com o ícone já aplicado
 	 */
-	
+
 	if (rule.iconType == 'lucide') {
 		// se for um ícone normal do lucide,
 		// dá pra só usar o setIcon nativo do obsidian
@@ -215,19 +214,16 @@ export default class Glyphure extends Plugin {
 class GlyphureSettingsTab extends PluginSettingTab {
 	plugin: Glyphure;
 	
-	// TODO: documentação
 	constructor(app: App, plugin: Glyphure) {
 		/**
 		 * cria a tab de settings do plugin
 		 * e mantém referência da instância principal
 		 *
-		 * args:
-		 *		app:
-		 *			instância principal do obsidian
+		 * @param app: instância principal do obsidian
 		 *
-		 *		plugin:
-		 *			instância do plugin glyphure
+		 * @param plugin: instância do plugin glyphure
 		*/
+
 		super(app, plugin)
 		this.plugin = plugin
 	}
