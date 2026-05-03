@@ -40,3 +40,25 @@
 	margin-top: 0;
 	margin-bottom: 0;
 }
+
+.glyphure-preview {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.preview-item {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--background-secondary);
+	/* max-width: min-content; */
+	width: 100%;
+
+	border: var(--divider-width) solid var(--divider-color);
+	border-radius: var(--modal-radius);
+	/* border-radius: 4px; */
+
+	margin: 15px;
+	padding: 5px;
+}

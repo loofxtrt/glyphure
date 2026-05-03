@@ -44,6 +44,9 @@ function applyIconToElement(el: HTMLElement, rule: Rule): HTMLElement {
 	 * aplica um ícone à um elemento de formas diferentes
 	 * dependendo do tipo dele
 	 * 
+	 * ISSO APAGA QUALQUER COISA QUE ESTIVER NESSE ELEMENTO ANTES
+	 * o ideal é que ele seja um elemento vazio especificamente pro ícone
+	 * 
 	 * @param el: elemento a receber o ícone
 	 * 			  no caso da file tree, geralmente seria uma div
 	 * 		
@@ -53,16 +56,30 @@ function applyIconToElement(el: HTMLElement, rule: Rule): HTMLElement {
 	 * @returns: elemento com o ícone já aplicado
 	 */
 
+	// adicionar classes html necessárias
+	el.classList.add('glyphure-icon');
+	
+	if (rule.highlight) {
+		el.classList.add('glyphure-highlighted');
+	}
+
+	// aplicar o ícone
 	if (rule.iconType == 'lucide') {
 		// se for um ícone normal do lucide,
 		// dá pra só usar o setIcon nativo do obsidian
-		setIcon(el, rule.id);	
-	} else if (rule.iconType == 'svg' ) {
-		let svg = rule.svg;
+
+		// garantir que o id seja válido pra api do obsidian/lucide
+		// até funciona sem isso, mas dá alguns erros (tipo folder virando folder-open)
+		let iconId = rule.id;
+		if (!iconId.startsWith('lucide-')) {
+			iconId = 'lucide-' + iconId;
+		}
 		
-		if (svg) {
-			// isso espera que o conteúdo do svg seja igual o de uma tag html
-			el.innerHTML = svg;
+		setIcon(el, iconId);	
+	} else if (rule.iconType == 'svg' ) {
+		// isso espera que o conteúdo do svg seja igual ao de uma tag html
+		if (rule.svg) {
+			el.innerHTML = rule.svg;
 		} else {
 			// fallback pra indicar que o tipo é svg
 			// mas nenhum svg foi passado
@@ -178,9 +195,6 @@ export default class Glyphure extends Plugin {
 					break;
 				}
 			}
-
-			// garantir que o id seja válido pra api do obsidian/lucide
-			let iconId = rule.id;
 			
 			// TODO: fazer isso com um observer que escuta quais pastas
 			// foram abertas e quais foram fechadas
@@ -189,22 +203,11 @@ export default class Glyphure extends Plugin {
 			// 	// nenhum ícone custom e estão abertas
 			// 	iconId = isCollapsed ? 'folder' : 'folder-open';
 			// }
-
-			if (!iconId.startsWith('lucide-')) {
-				iconId = 'lucide-' + iconId;
-			}
-			
-			// criar a div do ícone e adicionar as classes html
-			const iconDiv = document.createElement('div');
-			iconDiv.classList.add('glyphure-icon');
-
-			// aplicar classes htmls necessárias
-			if (rule.highlight) {
-				iconDiv.classList.add('glyphure-highlighted');
-			}
 			
 			// resolver a aplicação do ícone
-			// e adicionar o resulto no começo/antes do elemento da file tree
+			// e adicionar o resultado no começo/antes do elemento da file tree
+			const iconDiv = document.createElement('div');
+			
 			applyIconToElement(iconDiv, rule);
 			d.prepend(iconDiv);
 		}
@@ -228,6 +231,31 @@ class GlyphureSettingsTab extends PluginSettingTab {
 		this.plugin = plugin
 	}
 
+	buildItemPreview(rule: Rule): HTMLElement {
+		/**
+		 * cria um item de preview pra ser adicionado
+		 * a um container de preview
+		 * 
+		 * @param rule: regra que o preview deve usar de exemplo
+		 */
+
+		let item = createDiv('preview-item') as HTMLElement;
+		
+		// classes pra mimicar um item da file tree nativa do obsidian
+		item.classList.add('tree-item-self', 'nav-folder-title', 'nav-file-title')
+
+		// ícone
+		let icon = item.createDiv('icon') as HTMLElement;
+		applyIconToElement(icon, rule);
+		
+		// nome do """arquivo"""
+		let fileName = createSpan();
+		fileName.innerText = rule.match;
+		item.appendChild(fileName)
+
+		return item;
+	}
+
 	display(): void {
 		/**
 		 * renderiza toda a interface da tab de settings
@@ -241,10 +269,12 @@ class GlyphureSettingsTab extends PluginSettingTab {
 		
 		this.plugin.settings.rules.forEach((rule, index) => {
 			// seção visual individual da regra
-			const section = containerEl.createDiv('glyphure-rule');
+			const section = containerEl.createDiv('glyphure-rule') as HTMLElement;
 
+			// seção do preview
 			const preview = section.createDiv('glyphure-preview');
-			preview.createEl
+			const itemPreview = this.buildItemPreview(rule);
+			preview.appendChild(itemPreview);
 			
 			// seletor do tipo de ícone
 			new Setting(section)
@@ -334,7 +364,7 @@ class GlyphureSettingsTab extends PluginSettingTab {
 			
 			new Setting(section)
 				.setName('Remove rule')
-				.setDesc('Removes this rule')
+				.setDesc('Remove this rule')
 				.addButton(button => {
 					button
 						.setButtonText('Remove rule')
