@@ -92,7 +92,7 @@ function applyIconToElement(el: HTMLElement, rule: Rule): HTMLElement {
 }
 
 export default class Glyphure extends Plugin {
-	settings: GlyphureSettings;
+	settings!: GlyphureSettings; // ! indica certeza que vai ser inicializado
 
 	async onload() {
 		/**
@@ -153,6 +153,8 @@ export default class Glyphure extends Plugin {
 		 * salva os settings atuais no disco
 		*/
 
+		// TODO: limpar e reinjetar ícones sempre que salvar os settings
+		
 		// não precisa serializar pq a api do obsidian já faz isso
 		await this.saveData(this.settings);
 	}
@@ -271,6 +273,7 @@ class GlyphureSettingsTab extends PluginSettingTab {
 			// seção visual individual da regra
 			const section = containerEl.createDiv('glyphure-rule') as HTMLElement;
 
+			// TODO: preview que se atualiza em tempo real ao modificar/adicionar novas regras
 			// seção do preview
 			const preview = section.createDiv('glyphure-preview');
 			const itemPreview = this.buildItemPreview(rule);
