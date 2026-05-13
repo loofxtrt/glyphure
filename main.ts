@@ -190,10 +190,8 @@ export default class Glyphure extends Plugin {
 			let rule = DEFAULT_RULE;
 			
 			for (const r of this.settings.rules) {
-				if (r.match == dirName) {
-					if (r.enabled) {
-						rule = r;
-					}
+				if (r.match == dirName && r.enabled) {
+					rule = r;
 					break;
 				}
 			}
